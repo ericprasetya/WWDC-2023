@@ -1,79 +1,42 @@
 import SwiftUI
 import PencilKit
+import AVKit
 
 struct ContentView: View {
     @StateObject var viewModel = ViewModel()
     @State var offsetX: CGFloat = 400
-    @State var offsetY: CGFloat = 300
-    
-    @State var chatTitle = "Hi! Welcome to enCanting"
-    @State var chat = "This is an interactive app that helps you to understand the creation process of Batik from Indonesia"
+    @State var offsetY: CGFloat = 600
     @State var chatBubbleHeight: CGFloat = 300
     @State var chatBubbleOffsetY: CGFloat = -150
-    
+    @State var bgMusic: AVAudioPlayer?
     @State var fillColor = false
     
     var body: some View {
         ZStack {
             Image("background")
                 .resizable()
-            
-            //ornament behind + logo
-            VStack{
-                HStack{
-                    Image("ornament-left")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 350)
-                        .offset(x: -offsetX, y: -offsetY)
-                    Spacer()
-                    Image("logo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 350)
-                        
-                    
-                    Spacer()
-                    Image("ornament-right")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 350)
-                        .offset(x: offsetX, y: -offsetY)
-                }
-                Spacer()
-                HStack{
-                    Image("cloud-left")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 350)
-                        .offset(x: -offsetX, y: offsetY)
-                    
-                    Spacer()
-                    Image("cloud-right")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 350)
-                        .offset(x: offsetX, y: offsetY)
-                }
-            }
-            
+            BackgroundView(offsetX: $offsetX, offsetY: $offsetY)
             //chat view
             VStack {
                 Spacer()
                 HStack{
-                    Image(viewModel.chatIndex == 0 ? "memoji-hello" : "memoji-chat")
+                    Image(viewModel.chatIndex == 0 ? "memoji-hello" :  viewModel.chatIndex == 8 ? "memoji-thanks" : "memoji-chat")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 350)
-                    
+                        .frame(width: 300)
+                        .zIndex(3)
+                        .offset(y: offsetY)
+                        .animation(.interactiveSpring(response: 0.9, dampingFraction: 0.8, blendDuration: 0.5).delay(1.5), value: offsetY)
+                        .animation(.spring(), value: viewModel.chatIndex)
                     
                     ZStack {
-                        Image("chat-bubble")
-                            .resizable()
+                        ChatBubble(height: $chatBubbleHeight)
                         VStack (alignment: .leading) {
-                            Text(viewModel.currentChat!.title)
+                            Text(.init(viewModel.currentChat!.title))
                                 .bold()
-                            Text(viewModel.currentChat!.desc)
+                                .font(.system(size: 22))
+                            Text(.init(viewModel.currentChat!.desc))
+                                .font(.system(size: 18))
                             HStack{
                                 Spacer()
                                 Image("canting")
@@ -101,21 +64,17 @@ struct ContentView: View {
                                     Button {
                                         viewModel.nextChat()
                                         if viewModel.chatIndex == 3 {
-                                            withAnimation {
+                                            withAnimation(.spring()) {
                                                 chatBubbleHeight = 200
                                                 chatBubbleOffsetY = 50
                                             }
                                         }
                                         
-//                                        if viewModel.chatIndex == 4 {
-//                                            
-//                                        }
-                                        
                                         if viewModel.chatIndex == 5 {
                                             viewModel.showNextButton.toggle()
                                         }
                                         if viewModel.chatIndex == 7 {
-                                            withAnimation {
+                                            withAnimation(.spring()) {
                                                 viewModel.isTimerShown = false
                                                 viewModel.strokeColor = .white
                                                 viewModel.batikFabricPosition = CGPoint(
@@ -123,6 +82,9 @@ struct ContentView: View {
                                                 )
                                                 viewModel.fabricScale = 1
                                             }
+                                        }
+                                        if viewModel.chatIndex == 8 {
+                                            viewModel.showNextButton.toggle()
                                         }
                                     } label: {
                                         Text("Next")
@@ -132,14 +94,16 @@ struct ContentView: View {
                                     .buttonStyle(.borderedProminent)
                                     .padding(.bottom, 20)
                                     .padding(.trailing, 30)
+                                    .disabled(viewModel.strokeIsFour == false && viewModel.chatIndex == 3)
                                 }
-                                
                             }
                         }
                     }
                     .frame(width: 600, height: chatBubbleHeight)
-                    .offset(x: -70, y: chatBubbleOffsetY)
+                    .offset(x: -20, y: chatBubbleOffsetY)
                     
+                    .offset(y: offsetY)
+                    .animation(.interactiveSpring(response: 0.9, dampingFraction: 0.8, blendDuration: 0.5).delay(2), value: offsetY)
                     Spacer()
                 }
             }
@@ -150,18 +114,33 @@ struct ContentView: View {
             }
             
             if viewModel.chatIndex > 7 {
-                
+                EndingView()
+                    .offset(y: -30)
             }
-            
-            
-            
         }
         .ignoresSafeArea()
         .onAppear {
-            withAnimation {
-                offsetX = 0
-                offsetY = 0
-            }
+            offsetX = 0
+            offsetY = 0
+            playSound()
+        }
+        
+    }
+    
+    //playaudio
+    func playSound() {
+        guard let url = Bundle.main.url(forResource: "bg-music", withExtension: "mp3")
+        else {
+            return
+        }
+        do {
+            bgMusic = try AVAudioPlayer(contentsOf: url)
+            bgMusic?.numberOfLoops = -1
+            bgMusic?.play()
+            bgMusic?.setVolume(0.2, fadeDuration: 0.5)
+            
+        } catch let error {
+            print(error.localizedDescription)
         }
     }
 }

@@ -8,13 +8,15 @@
 import SwiftUI
 
 struct ChatBubble: View {
+    @Binding var height: CGFloat
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        ZStack{
+            RoundedRectangle(cornerRadius: 25, style: .continuous)
+                .fill(Color(hex: "#FFECDB"))
+            RoundedRectangle(cornerRadius: 25, style: .continuous)
+                .stroke(Color(hex: "#BB8663"), lineWidth: 8)
+        }
+        .frame(height: height - 20)
     }
 }
 
-struct ChatBubble_Previews: PreviewProvider {
-    static var previews: some View {
-        ChatBubble()
-    }
-}

@@ -10,46 +10,47 @@ import PencilKit
 
 struct DrawingScene: View {
     @ObservedObject var viewModel: ViewModel
+    // for canvas drawing
     @State var canvas = PKCanvasView()
     @State var isDraw = true
-    @State var color: Color = .black
-    @State var type: PKInkingTool.InkType = .pen
-    @State var colorPicker = false
-    @State var isHighlighted = false
-    
-//    let firstColorPositionInit = CGPoint(x: UIScreen.main.bounds.midX + 200, y: UIScreen.main.bounds.midY - 150)
-//    @State var firstColorPosition = CGPoint(x: UIScreen.main.bounds.midX + 200, y: UIScreen.main.bounds.midY - 150)
-    
-//    let secondColorPositionInit = CGPoint(x: UIScreen.main.bounds.midX + 200, y: UIScreen.main.bounds.midY - 50)
-//    @State var secondColorPosition = CGPoint(x: UIScreen.main.bounds.midX + 200, y: UIScreen.main.bounds.midY - 50)
-    
-//    let batikFabricPositionInit = CGPoint(x: UIScreen.main.bounds.midX - 200, y: UIScreen.main.bounds.midY)
-//    @State var batikFabricPosition = CGPoint(x: UIScreen.main.bounds.midX - 200, y: UIScreen.main.bounds.midY)
-    
-//    let basinPositionInit = CGPoint(x: UIScreen.main.bounds.midX + 200, y: UIScreen.main.bounds.midY)
-    
-    @State var debug = ""
+    @State var inkColor: Color = .black
+    @State var inkType: PKInkingTool.InkType = .pen
     @State var strokeCount = 0
+    
+    // for batik colloring
+    @State var colorPicker: Color = .yellow
+    @State var isHighlighted = false
     @State var strokeFill: Color = .clear
     
-//    @State var fabricScale: CGFloat = 1
-    
-    //for timer
+    // for timer
     @State private var timeRemaining = 5
-//    @State var isTimerShown = false
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
+    @Namespace var basin
+    
     var drag: some Gesture {
+
         DragGesture()
-            .onChanged { state in
-                viewModel.update(dragPosition: state.location)
+        .onChanged({ state in
+            viewModel.cantingColorPosition = state.location
+            
+            for(_, frame) in viewModel.frames where frame.contains(state.location) {
+                isHighlighted = true
+                return
             }
-            .onEnded { state in
-                viewModel.update(dragPosition: state.location)
-                withAnimation {
-                    viewModel.confirmDrop()
-                }
+            isHighlighted = false
+        })
+        .onEnded({ state in
+            viewModel.cantingColorPosition = state.location
+            
+            for(_, frame) in viewModel.frames where frame.contains(state.location) {
+                strokeFill = colorPicker
+                isHighlighted = false
+                viewModel.cantingColorPosition = viewModel.cantingColorPositionInit
+                return
             }
+            
+        })
     }
     
     var body: some View{
@@ -68,7 +69,6 @@ struct DrawingScene: View {
                                         withAnimation {
                                             viewModel.fabricScale = 0.3
                                         }
-//                                        isTimerShown.toggle()
                                     }
                                     else {
                                         withAnimation {
@@ -81,7 +81,6 @@ struct DrawingScene: View {
                                         withAnimation {
                                             viewModel.fabricScale = 0
                                             viewModel.nextChat()
-//                                            print(chatIndex)
                                         }
                                         viewModel.isTimerShown.toggle()
                                     }
@@ -106,11 +105,12 @@ struct DrawingScene: View {
                                     }
                             }
                             
-                            Image("basin")
+                            Image(viewModel.isTimerShown ? "basin-fabric" : "basin")
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: 300)
                                 .position(viewModel.basinPositionInit)
+                                .animation(.interactiveSpring(response: 0.9, dampingFraction: 0.8, blendDuration: 0.5), value: viewModel.isTimerShown)
                         }
                     }
                     
@@ -123,10 +123,9 @@ struct DrawingScene: View {
                             .scaledToFit()
                             .opacity(0.3)
                         if viewModel.chatIndex == 3 {
-                            DrawingView(canvas: $canvas, isDraw: $isDraw, type: $type, color: $color, strokeCount: $strokeCount)
+                            DrawingView(canvas: $canvas, isDraw: $isDraw, type: $inkType, color: $inkColor, strokeCount: $strokeCount, viewModel: viewModel)
                         } else if viewModel.chatIndex == 4 {
                             ConvertDrawingView(viewModel: viewModel, drawing: canvas.drawing, strokeFill: $strokeFill, isHighlighted: $isHighlighted)
-                            Text(debug)
                         }
                     }
                     .background(.white)
@@ -135,74 +134,38 @@ struct DrawingScene: View {
                     .padding(.trailing, viewModel.chatIndex == 4 ? 300 : 0)
                     
                     if viewModel.chatIndex == 4 {
-                        
-                        DraggableCircle(
-                            circle: CircleColored(id: 1, color: .yellow),
-                            position: viewModel.firstColorPosition,
-                            gesture:
-                                DragGesture()
-                                .onChanged({ state in
-                                    viewModel.firstColorPosition = state.location
-                                    
-                                    for(_, frame) in viewModel.frames where frame.contains(state.location) {
-//                                        debug = "you are touching \(id)"
-                                        isHighlighted = true
-                                        return
-                                    }
-                                    isHighlighted = false
-                                })
-                                .onEnded({ state in
-                                    viewModel.firstColorPosition = state.location
-                                    
-                                    for(_, frame) in viewModel.frames where frame.contains(state.location) {
-//                                        debug = "you are touching \(id)"
-                                        strokeFill = .yellow
-                                        isHighlighted = false
-                                        viewModel.firstColorPosition = viewModel.firstColorPositionInit
-                                        return
-                                    }
-                                    
-                                })
+                        VStack(alignment: .leading) {
+                            ColorPicker(selection: $colorPicker) {
+                                Text("Pick Color")
+                                    .bold()
+                                    .font(.title3)
+                            }
+                            .padding(.bottom, 20)
+                            Text("Drag Canting to the canvas")
+                                .bold()
+                                .font(.title3)
+                        }
+                        .frame(width: 200)
+                        .offset(x: 200, y: -100)
+                            
+                        DraggableCanting(
+                            color: $colorPicker,
+                            position: viewModel.cantingColorPosition,
+                            gesture: drag
                         )
-                        .opacity(viewModel.draggableToyOpacity)
-                        .zIndex(2)
-                        DraggableCircle(
-                            circle: CircleColored(id: 2, color: .red),
-                            position: viewModel.secondColorPosition,
-                            gesture:
-                                DragGesture()
-                                .onChanged({ state in
-                                    viewModel.secondColorPosition = state.location
-                                    
-                                    for(_, frame) in viewModel.frames where frame.contains(state.location) {
-                                        isHighlighted = true
-                                        return
-                                    }
-                                    isHighlighted = false
-                                    
-                                    
-                                })
-                                .onEnded({ state in
-                                    viewModel.secondColorPosition = state.location
-                                    for(_, frame) in viewModel.frames where frame.contains(state.location) {
-                                        strokeFill = .red
-                                        isHighlighted = false
-                                        viewModel.secondColorPosition = viewModel.secondColorPositionInit
-                                        return
-                                    }
-                                })
-                        )
-                        .opacity(viewModel.draggableToyOpacity)
+                        .opacity(viewModel.draggableCantingOpacity)
                         .zIndex(2)
                     }
                 }
                 if viewModel.chatIndex == 3 {
-                    VStack(alignment: .trailing, spacing: 50) {
+                    VStack(alignment: .center, spacing: 50) {
+                        Text("Select Your Tool then Draw in Canvas\nUse Apple Pencil For Best Experience")
                         Button {
                             isDraw = true
                         } label: {
                             Label {
                                 Text("Canting")
+                                    .foregroundColor(.black)
                             } icon: {
                                 Image("canting")
                                     .resizable()
@@ -216,49 +179,42 @@ struct DrawingScene: View {
                         } label: {
                             Label {
                                 Text("Eraser")
+                                    .foregroundColor(.black)
                             } icon: {
-                                Image(systemName: "eraser")
+                                Image(systemName: "eraser.fill")
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 50)
                             }
                         }
                         
-                        Text("Draw only 4 strokes!")
-                            .font(.title)
-                        Text("Stroke count: \(strokeCount)")
-                            .font(.subheadline)
+                        VStack{
+                            Text("Draw follow the batik pattern!")
+                                .font(.subheadline)
+                                .bold()
+                            Text("Stroke count: \(strokeCount)")
+                                .font(.subheadline)
+                            if viewModel.strokeIsFour == false {
+                                Text("Your total stroke is not four!")
+                                    .font(.subheadline)
+                                    .foregroundColor(.red)
+                            } else {
+                                Text("You may continue!")
+                                    .font(.subheadline)
+                                    .foregroundColor(.green)
+                            }
+                        }
                     }
                 }
             }
-            
+        }
+        .onAppear{
+            viewModel.initBatikFabricPosition()
+            viewModel.initBasinPosition()
+            viewModel.initCantingPosition()
         }
     }
-    
-    func saveImage() {
-        // getting image from canvas...
-        let image = canvas.drawing.image(from: canvas.drawing.bounds, scale: 1)
-        
-        //save to albums...
-        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
-    }
 }
-
-//struct ColloringView: View {
-//    @Binding var canvas: PKCanvasView
-//    var body: some View{
-//        ZStack{
-//            Image("batik-colored")
-//                .resizable()
-//                .scaledToFit()
-//                .opacity(0.3)
-//            ConvertDrawingView(drawing: canvas.drawing)
-//        }
-//        .background(.white)
-//        .border(.black)
-//        .frame(width: 400, height: 400)
-//    }
-//}
 
 struct DrawingView: UIViewRepresentable {
     @Binding var canvas: PKCanvasView
@@ -266,6 +222,7 @@ struct DrawingView: UIViewRepresentable {
     @Binding var type: PKInkingTool.InkType
     @Binding var color: Color
     @Binding var strokeCount: Int
+    @ObservedObject var viewModel: ViewModel
     //updating ink type
     var ink : PKInkingTool{
         PKInkingTool(type, color: UIColor(color), width: 10)
@@ -297,6 +254,11 @@ struct DrawingView: UIViewRepresentable {
         func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
             parent.strokeCount = canvasView.drawing.strokes.count
             print("Number of strokes: \(parent.strokeCount)")
+            if parent.strokeCount == 4 {
+                parent.viewModel.strokeIsFour = true
+            } else {
+                parent.viewModel.strokeIsFour = false
+            }
         }
     }
 
@@ -324,7 +286,7 @@ struct BatikFabric: View {
             }
             .offset(x: -40, y: -40)
         }
-        .background(.brown)
+        .background(Color(hex: "#87481C"))
         .frame(width: 400, height: 400)
         .border(Color.black)
     }
@@ -333,7 +295,6 @@ struct BatikFabric: View {
 struct PKStrokeShape: Shape {
     var stroke: PKStroke
 
-    
     func path(in rect: CGRect) -> Path {
         var path = Path()
         
@@ -353,17 +314,20 @@ struct PKStrokeShape: Shape {
         return path
     }
 }
-/*
+
 struct StrokeView: View {
-    @Binding var strokeColor: Color
+    @ObservedObject var viewModel: ViewModel
+    var stroke: PKStroke
     @Binding var strokeFill: Color
-    
+    @Binding var isHighlighted: Bool
+    var index: Int
     var body: some View {
         ZStack{
             PKStrokeShape(stroke: stroke)
-                .stroke(strokeColor, lineWidth: 5)
-            PKStrokeShape(stroke: stroke)
                 .fill(strokeFill)
+            PKStrokeShape(stroke: stroke)
+                .stroke(viewModel.strokeColor, lineWidth: 5)
+                .shadow(color: .green, radius: isHighlighted ? 25 : 0)
                 .background (
                     GeometryReader { proxy -> Color in
                         viewModel.update(frame: proxy.frame(in: .global), for: index)
@@ -373,7 +337,7 @@ struct StrokeView: View {
         }
     }
 }
- */
+
 struct ConvertDrawingView: View {
     @ObservedObject var viewModel: ViewModel
     var drawing: PKDrawing
@@ -381,33 +345,13 @@ struct ConvertDrawingView: View {
     @Binding var isHighlighted: Bool
     @State private var xOffset: CGFloat = 0
     
-    //var shapeDict: [StrokeView] = [StrokeView(strokeColor: Color.black, strokeFill: Color.clear)]
-    
     var body: some View {
         GeometryReader { geometry in
             ForEach(0..<drawing.strokes.count, id: \.self) { index in
                 let stroke = drawing.strokes[index]
-                ZStack{
-                    PKStrokeShape(stroke: stroke)
-                        .fill(strokeFill)
-                    PKStrokeShape(stroke: stroke)
-                        .stroke(viewModel.strokeColor, lineWidth: 5)
-                        .shadow(color: .green, radius: isHighlighted ? 25 : 0)
-                        .background (
-                            GeometryReader { proxy -> Color in
-                                viewModel.update(frame: proxy.frame(in: .global), for: index)
-                                return Color.clear
-                            }
-                        )
-                }
+                StrokeView(viewModel: viewModel, stroke: stroke, strokeFill: $strokeFill, isHighlighted: $isHighlighted, index: index)
             }
         }
     }
 }
 
-//struct DrawingScene_Previews: PreviewProvider {
-//    static var previews: some View {
-//        DrawingScene()
-//            .previewInterfaceOrientation(.landscapeRight)
-//    }
-//}
