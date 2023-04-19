@@ -17,7 +17,7 @@ extension Chat {
     static let all = [
         Chat(
             id: 0,
-            title: "Hi! Welcome To enCanting",
+            title: "Hi! I'm Eric! Welcome To enCanting!",
             desc: "This is an interactive app that helps you to understand the creation process of Batik from Indonesia"
         ),
         Chat(

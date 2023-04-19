@@ -1,5 +1,5 @@
 //
-//  DrawingSceneView.swift
+//  ProcessView.swift
 //  WWDC2023
 //
 //  Created by Eric Prasetya Sentosa on 17/04/23.
@@ -8,7 +8,7 @@
 import SwiftUI
 import PencilKit
 
-struct DrawingSceneView: View {
+struct ProcessView: View {
     @ObservedObject var viewModel: ViewModel
     // for canvas drawing
     @State var canvas = PKCanvasView()
@@ -29,7 +29,6 @@ struct DrawingSceneView: View {
     @Namespace var basin
     
     var drag: some Gesture {
-
         DragGesture()
         .onChanged({ state in
             viewModel.cantingColorPosition = state.location
@@ -99,13 +98,12 @@ struct DrawingSceneView: View {
                                             timeRemaining -= 1
                                         }
                                         if timeRemaining == 0{
-                                            //                                        viewModel.isTimerShown.toggle()
                                             viewModel.showNextButton = true
                                         }
                                     }
                             }
                             
-                            Image(viewModel.isTimerShown ? "basin-fabric" : "basin")
+                            Image(viewModel.isTimerShown ? "cauldron-fabric" : "cauldron")
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: 300)
@@ -212,145 +210,6 @@ struct DrawingSceneView: View {
             viewModel.initBatikFabricPosition()
             viewModel.initBasinPosition()
             viewModel.initCantingPosition()
-        }
-    }
-}
-
-struct DrawingView: UIViewRepresentable {
-    @Binding var canvas: PKCanvasView
-    @Binding var isDraw: Bool
-    @Binding var type: PKInkingTool.InkType
-    @Binding var color: Color
-    @Binding var strokeCount: Int
-    @ObservedObject var viewModel: ViewModel
-    //updating ink type
-    var ink : PKInkingTool{
-        PKInkingTool(type, color: UIColor(color), width: 10)
-    }
-    let eraser = PKEraserTool(.vector)
-    func makeUIView(context: Context) -> PKCanvasView {
-        canvas.drawingPolicy = .anyInput
-        canvas.tool = isDraw ? ink : eraser
-        canvas.backgroundColor = .clear
-        canvas.delegate = context.coordinator
-        return canvas
-    }
-    
-    func updateUIView(_ uiView: PKCanvasView, context: Context) {
-        // updating tool when ever main view updates
-        uiView.tool = isDraw ? ink : eraser
-    }
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    class Coordinator: NSObject, PKCanvasViewDelegate {
-        let parent: DrawingView
-        
-        init(_ parent: DrawingView) {
-            self.parent = parent
-        }
-        
-        func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
-            parent.strokeCount = canvasView.drawing.strokes.count
-            print("Number of strokes: \(parent.strokeCount)")
-            if parent.strokeCount == 4 {
-                parent.viewModel.strokeIsFour = true
-            } else {
-                parent.viewModel.strokeIsFour = false
-            }
-        }
-    }
-
-}
-
-struct BatikFabric: View {
-    
-    @ObservedObject var viewModel: ViewModel
-    var canvas: PKCanvasView
-    @Binding var strokeFill: Color
-    @Binding var isHighlighted: Bool
-    var body: some View {
-        let rows = 4
-        let columns = 4
-        let gridItemSize = 400 / CGFloat(rows)
-        VStack(spacing: 0) {
-            ForEach(0..<rows, id: \.self) { row in
-                HStack(spacing: 0) {
-                    ForEach(0..<columns, id: \.self) { column in
-                        ConvertDrawingView(viewModel: viewModel, drawing: canvas.drawing, strokeFill: $strokeFill, isHighlighted: $isHighlighted)
-                            .frame(width: gridItemSize, height: gridItemSize)
-                            .scaleEffect(0.25)
-                    }
-                }
-            }
-            .offset(x: -40, y: -40)
-        }
-        .background(Color(hex: "#87481C"))
-        .frame(width: 400, height: 400)
-        .border(Color.black)
-    }
-}
-
-struct PKStrokeShape: Shape {
-    var stroke: PKStroke
-
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        
-        var previousPoint: PKStrokePoint?
-        for point in stroke.path {
-            if let previous = previousPoint {
-                let midPoint = CGPoint(x: (previous.location.x + point.location.x) / 2,
-                                       y: (previous.location.y + point.location.y) / 2)
-                path.addQuadCurve(to: midPoint, control: previous.location)
-            } else {
-                path.move(to: point.location)
-            }
-            previousPoint = point
-        }
-        path.closeSubpath()
-        
-        return path
-    }
-}
-
-struct StrokeView: View {
-    @ObservedObject var viewModel: ViewModel
-    var stroke: PKStroke
-    @Binding var strokeFill: Color
-    @Binding var isHighlighted: Bool
-    var index: Int
-    var body: some View {
-        ZStack{
-            PKStrokeShape(stroke: stroke)
-                .fill(strokeFill)
-            PKStrokeShape(stroke: stroke)
-                .stroke(viewModel.strokeColor, lineWidth: 5)
-                .shadow(color: .green, radius: isHighlighted ? 25 : 0)
-                .background (
-                    GeometryReader { proxy -> Color in
-                        viewModel.update(frame: proxy.frame(in: .global), for: index)
-                        return Color.clear
-                    }
-                )
-        }
-    }
-}
-
-struct ConvertDrawingView: View {
-    @ObservedObject var viewModel: ViewModel
-    var drawing: PKDrawing
-    @Binding var strokeFill: Color
-    @Binding var isHighlighted: Bool
-    @State private var xOffset: CGFloat = 0
-    
-    var body: some View {
-        GeometryReader { geometry in
-            ForEach(0..<drawing.strokes.count, id: \.self) { index in
-                let stroke = drawing.strokes[index]
-                StrokeView(viewModel: viewModel, stroke: stroke, strokeFill: $strokeFill, isHighlighted: $isHighlighted, index: index)
-            }
         }
     }
 }

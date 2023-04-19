@@ -20,7 +20,7 @@ struct EndingView: View {
     var texts = [
         "The batik that we have just made is called __batik kawung__. Each batik pattern has its own meaning and philosophy. Kawung batik is a batik motif that is shaped like a circle, similar to the fruit of the kawung palm, arranged in a neat geometric pattern. The kawung motif symbolizes __perfection, purity, and sanctity__. This batik pattern was first introduced in the 13th century, specifically on the island of __Java__.\n(source: budaya.jogjaprov.go.id)",
         "Batik is considered an important cultural icon in Indonesia. Indonesian people wear batik as casual and formal clothing that can be used in various events. At the **G20 Summit** which was held last November 2022, Indonesia hosted the event and provided batik to be used as souvenirs and worn by world leaders attending the Welcoming Dinner.\n(source: kompasiana.com)",
-        "**UNESCO** has designated the Indonesian Batik as a **Masterpiece of the Oral and Intangible Heritage of Humanity** since 2 October 2009. Since then, 2 October has been designated as National Batik Day in Indonesia.\n(source: budaya.jogjaprov.go.id)"
+        "**UNESCO** has designated the Indonesian Batik as an **Intangible Cultural Heritage of Humanity** since 2 October 2009. Since then, 2 October has been designated as National Batik Day in Indonesia.\n(source: budaya.jogjaprov.go.id)"
     ]
     
     var body: some View {

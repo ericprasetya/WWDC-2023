@@ -109,7 +109,7 @@ struct ContentView: View {
             }
             
             if viewModel.chatIndex >= 3 && viewModel.chatIndex <= 7{
-                DrawingSceneView(viewModel: viewModel)
+                ProcessView(viewModel: viewModel)
                     .offset(y:-30)
             }
             
