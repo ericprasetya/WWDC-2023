@@ -1,5 +1,5 @@
 //
-//  ChatBubble.swift
+//  ChatBubbleView.swift
 //  WWDC2023
 //
 //  Created by Eric Prasetya Sentosa on 18/04/23.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ChatBubble: View {
+struct ChatBubbleView: View {
     @Binding var height: CGFloat
     var body: some View {
         ZStack{

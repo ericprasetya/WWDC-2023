@@ -32,7 +32,7 @@ struct EndingView: View {
                 .offset(x: -offsetX)
                 .animation(.interactiveSpring(response: 0.9, dampingFraction: 0.8, blendDuration: 0.5).delay(0.5), value: offsetX)
             ZStack {
-                ChatBubble(height: $chatBubbleHeight)
+                ChatBubbleView(height: $chatBubbleHeight)
                     .frame(width: 300)
                 VStack{
                     Text(.init(texts[textIndex]))

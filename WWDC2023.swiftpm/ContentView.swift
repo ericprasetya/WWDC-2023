@@ -30,7 +30,7 @@ struct ContentView: View {
                         .animation(.spring(), value: viewModel.chatIndex)
                     
                     ZStack {
-                        ChatBubble(height: $chatBubbleHeight)
+                        ChatBubbleView(height: $chatBubbleHeight)
                         VStack (alignment: .leading) {
                             Text(.init(viewModel.currentChat!.title))
                                 .bold()
@@ -109,7 +109,7 @@ struct ContentView: View {
             }
             
             if viewModel.chatIndex >= 3 && viewModel.chatIndex <= 7{
-                DrawingScene(viewModel: viewModel)
+                DrawingSceneView(viewModel: viewModel)
                     .offset(y:-30)
             }
             

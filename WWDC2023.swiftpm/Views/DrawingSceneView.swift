@@ -1,5 +1,5 @@
 //
-//  DrawingScene.swift
+//  DrawingSceneView.swift
 //  WWDC2023
 //
 //  Created by Eric Prasetya Sentosa on 17/04/23.
@@ -8,7 +8,7 @@
 import SwiftUI
 import PencilKit
 
-struct DrawingScene: View {
+struct DrawingSceneView: View {
     @ObservedObject var viewModel: ViewModel
     // for canvas drawing
     @State var canvas = PKCanvasView()
