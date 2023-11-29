@@ -23,4 +23,4 @@ The goal of enCanting is to raise awareness about the process of batik. Through 
    ```bash
    git clone https://github.com/ericprasetya/WWDC-2023.git
 
-2. **Open the project(.swiftpm) in swift playground atau XCode**
+2. **Open the project(.swiftpm) in Swift Playground or Xcode**
